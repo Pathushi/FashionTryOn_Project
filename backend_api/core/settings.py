@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# backend_api/core/settings.py
+
+
+
 
 # Application definition
 
@@ -131,5 +135,7 @@ REST_FRAMEWORK = {
 }
 
 import os
-MEDIA_URL = '/media/'
+# 2. Update Media URL to use your specific ngrok link
+# This makes your garment images accessible to the AI cloud
+MEDIA_URL = '/media/' 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

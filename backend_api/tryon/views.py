@@ -5,28 +5,26 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 from catalog.models import Garment
+from .serializers import GarmentSerializer
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class GarmentListView(APIView):
     """
-    Returns the catalog of clothes (Men, Women, Kids) for the UI.
+    Returns the catalog of clothes for the UI.
+    Now uses standard local media paths.
     """
     def get(self, request):
-        # Fetch all garments from your database
-        garments = Garment.objects.all().values('id', 'name', 'category', 'image', 'price')
-        
-        # Ensure image URLs are absolute so React can load them
-        for g in garments:
-            if g['image']:
-                g['image'] = request.build_absolute_uri(settings.MEDIA_URL + g['image'])
-        
-        return Response(garments, status=status.HTTP_200_OK)
+        garments = Garment.objects.all()
+        # The serializer context ensures URLs are built correctly for the environment
+        serializer = GarmentSerializer(garments, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class VirtualTryOnAPI(APIView):
     """
-    The Independent Layer that wraps the API4AI service.
+    Independent Layer connecting React to the AI service.
+    Bypass headers for ngrok have been removed.
     """
     def post(self, request):
         # 1. Get the user's selfie and the selected garment's image URL
@@ -34,34 +32,45 @@ class VirtualTryOnAPI(APIView):
         garment_url = request.data.get('garment_url')
 
         if not user_photo or not garment_url:
-            return Response(
-                {"error": "Missing image or garment selection"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Missing image or garment selection"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. Setup the RapidAPI credentials from your screenshot
+        # 2. Setup standard RapidAPI credentials
         url = "https://virtual-try-on7.p.rapidapi.com/results"
         headers = {
             "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
             "x-rapidapi-host": os.getenv("RAPIDAPI_HOST"),
+            # ngrok-skip-browser-warning removed as it is no longer needed
         }
 
-        # 3. Call the API4AI service using Multipart encoding
-        # We send both the image file and the garment URL in the 'files' dictionary
+        # 3. Call the external AI service
         files = {
             "image": user_photo,
             "url-apparel": (None, garment_url) 
         }
 
         try:
-            # Note: Do not use 'data=' here; 'files=' handles the full request
             response = requests.post(url, files=files, headers=headers)
+            ai_data = response.json()
+
+            # DEBUG: Check the raw response in your terminal
+            print("AI Raw Response:", ai_data)
+
+            # 4. Extracting the URL from the response structure
+            if "results" in ai_data and len(ai_data["results"]) > 0:
+                first_result = ai_data["results"][0]
+                
+                # Check for nested entities structure
+                if isinstance(first_result, dict) and "entities" in first_result:
+                    entities = first_result.get("entities", [])
+                    if entities and len(entities) > 0:
+                        generated_url = entities[0].get("image")
+                        return Response({"url": generated_url}, status=status.HTTP_200_OK)
+                
+                # Check if the result is a direct URL string
+                if isinstance(first_result, str):
+                    return Response({"url": first_result}, status=status.HTTP_200_OK)
             
-            # 4. Return the AI result back to your UI
-            return Response(response.json(), status=status.HTTP_200_OK)
+            return Response({"error": "AI failed to process. Ensure the garment URL is publicly accessible.", "raw": ai_data}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response(
-                {"error": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
