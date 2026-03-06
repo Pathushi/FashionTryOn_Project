@@ -1,21 +1,31 @@
-# backend_api/tryon/serializers.py
 from rest_framework import serializers
-from catalog.models import Garment
+from catalog.models import Garment, GarmentVariant
+
+# 1. Create a serializer for the color variants
+class GarmentVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GarmentVariant
+        fields = ['id', 'color_name', 'color_hex', 'variant_image']
 
 class GarmentSerializer(serializers.ModelSerializer):
-    # This remains a SerializerMethodField to ensure we get the full local URL
+    # This pulls in all variants linked to this garment
+    variants = GarmentVariantSerializer(many=True, read_only=True)
     image = serializers.SerializerMethodField()
 
     class Meta:
         model = Garment
-        fields = ['id', 'name', 'category', 'image', 'price']
+        fields = [
+            'id', 
+            'name', 
+            'category', 
+            'image', 
+            'price', 
+            'fabric_type', 
+            'available_sizes', 
+            'variants'  # Use 'variants' instead of 'available_colors'
+        ]
 
     def get_image(self, obj):
-        request = self.context.get('request')
         if obj.image:
-            # If the request context exists, it builds: http://127.0.0.1:8000/media/...
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            # Fallback to the relative path: /media/garments/shirt.jpg
             return obj.image.url
         return None

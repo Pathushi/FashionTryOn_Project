@@ -12,11 +12,23 @@ class Garment(models.Model):
     
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    # The 'image' field stores the transparent PNG of the garment for the AI try-on
+    # This acts as the "Main" default image
     image = models.ImageField(upload_to='garments/')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    fabric_type = models.CharField(max_length=100, default="Premium Cotton")
+    available_sizes = models.CharField(max_length=100, default="S,M,L,XL")
 
     def __str__(self):
-        return f"{self.name} - {self.category}"
+        return self.name
+
+class GarmentVariant(models.Model):
+    # Link this variant to a specific Garment
+    garment = models.ForeignKey(Garment, related_name='variants', on_delete=models.CASCADE)
+    color_name = models.CharField(max_length=50) # e.g., "Red"
+    color_hex = models.CharField(max_length=7)   # e.g., "#FF0000"
+    # The actual photo of the shirt in THIS color
+    variant_image = models.ImageField(upload_to='garments/variants/')
+
+    def __str__(self):
+        return f"{self.garment.name} - {self.color_name}"

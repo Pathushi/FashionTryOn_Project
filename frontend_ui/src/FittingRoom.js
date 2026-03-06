@@ -22,24 +22,42 @@ const FittingRoom = () => {
   const [selectedGarment, setSelectedGarment] = useState(
     location.state?.garment || null,
   );
+
+  // Day 03: Variant States (Now using objects from DB)
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("M");
+
   const [garments, setGarments] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [useCamera, setUseCamera] = useState(false);
 
-  // Day 02: Persistence for History
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem("tryon_history");
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Fetching data and setting initial variant
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/tryon/garments/`)
       .then((res) => res.json())
-      .then((data) => setGarments(data))
+      .then((data) => {
+        setGarments(data);
+        // If coming from Gallery, auto-select first variant
+        if (location.state?.garment) {
+          const garment = location.state.garment;
+          if (garment.variants && garment.variants.length > 0) {
+            setSelectedVariant(garment.variants[0]);
+          }
+        }
+      })
       .catch((err) => console.error("Database error:", err));
-  }, []);
+  }, [location.state?.garment]);
+
+  const filteredGarments = garments.filter((g) =>
+    g.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const handleCapture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -54,10 +72,8 @@ const FittingRoom = () => {
     if (file) reader.readAsDataURL(file);
   };
 
-  // Day 02: Robust Download Logic
   const handleDownload = () => {
     const link = document.createElement("a");
-    // Check if result is already base64 or a URL
     link.href = result.startsWith("http")
       ? result
       : `data:image/jpeg;base64,${result}`;
@@ -68,18 +84,21 @@ const FittingRoom = () => {
   };
 
   const handleGenerate = async () => {
-    if (!userImage || !selectedGarment)
-      return alert("Please provide both a photo and a garment!");
+    if (!userImage || !selectedGarment) return alert("Please provide both!");
     setLoading(true);
     setResult(null);
 
     try {
       const base64Response = await fetch(userImage);
       const blob = await base64Response.blob();
-
       const formData = new FormData();
       formData.append("image", blob, "user_selfie.jpg");
-      formData.append("garment_url", selectedGarment.image);
+
+      // Day 03 Logic: Use the variant image URL for the AI try-on
+      const finalGarmentUrl = selectedVariant
+        ? selectedVariant.variant_image
+        : selectedGarment.image;
+      formData.append("garment_url", finalGarmentUrl);
 
       const response = await fetch(`${API_BASE_URL}/api/tryon/generate/`, {
         method: "POST",
@@ -87,14 +106,10 @@ const FittingRoom = () => {
       });
 
       const data = await response.json();
-
-      // Support the Base64 response found in your console
       const finalResult = data.url || data.image || data.output;
 
       if (finalResult) {
         setResult(finalResult);
-
-        // Day 02: Update and Save History
         const newEntry = {
           url: finalResult,
           date: new Date().toLocaleTimeString(),
@@ -103,18 +118,14 @@ const FittingRoom = () => {
         setHistory(updatedHistory);
         localStorage.setItem("tryon_history", JSON.stringify(updatedHistory));
       } else {
-        alert("AI Error: " + (data.error || "Could not find image data."));
+        alert("AI Error: " + (data.error || "Generation failed."));
       }
     } catch (err) {
-      alert("Connection failed. Ensure Django is running on port 8000.");
+      alert("Connection failed. Check Django.");
     } finally {
       setLoading(false);
     }
   };
-
-  const filteredGarments = garments.filter((g) =>
-    g.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   return (
     <div className="min-h-screen bg-white text-black font-sans flex flex-col overflow-hidden">
@@ -132,13 +143,13 @@ const FittingRoom = () => {
       </nav>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT COLUMN: User Photo & History Sidebar */}
+        {/* LEFT COLUMN: User Photo */}
         <div className="w-1/2 p-12 border-r border-gray-50 flex flex-col bg-[#fafafa] overflow-y-auto">
           <div className="flex-1 flex flex-col items-center justify-center">
             <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
               Step 1: Your Photo
             </h2>
-            <div className="relative w-full aspect-[3/4] max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden group mb-12">
+            <div className="relative w-full aspect-[3/4] max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden mb-12">
               {!userImage ? (
                 useCamera ? (
                   <div className="h-full">
@@ -160,10 +171,10 @@ const FittingRoom = () => {
                       onClick={() => setUseCamera(true)}
                       className="flex items-center gap-3 text-[10px] uppercase tracking-widest hover:text-gray-500"
                     >
-                      <Camera size={18} strokeWidth={1} /> Open Camera
+                      <Camera size={18} /> Open Camera
                     </button>
                     <label className="flex items-center gap-3 text-[10px] uppercase tracking-widest cursor-pointer hover:text-gray-500">
-                      <Upload size={18} strokeWidth={1} /> Browse File
+                      <Upload size={18} /> Browse File
                       <input type="file" hidden onChange={handleFileUpload} />
                     </label>
                   </div>
@@ -175,18 +186,9 @@ const FittingRoom = () => {
                   className="w-full h-full object-cover"
                 />
               )}
-              {userImage && (
-                <button
-                  onClick={() => setUserImage(null)}
-                  className="absolute top-4 right-4 text-[9px] uppercase tracking-tighter bg-white/80 px-2 py-1 backdrop-blur-sm"
-                >
-                  Reset
-                </button>
-              )}
             </div>
           </div>
-
-          {/* DAY 02: History Section */}
+          {/* History */}
           {history.length > 0 && (
             <div className="w-full max-w-sm mx-auto border-t border-gray-200 pt-8">
               <h3 className="text-[9px] uppercase tracking-[0.3em] mb-4 text-gray-400 flex items-center gap-2">
@@ -215,43 +217,125 @@ const FittingRoom = () => {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Garment Selection */}
-        <div className="w-1/2 p-12 flex flex-col">
+        {/* RIGHT COLUMN: Garment Selection & Manual Variants */}
+        <div className="w-1/2 p-12 flex flex-col overflow-y-auto">
           <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
-            Step 2: Select Apparel
+            Step 2: Selection & Customization
           </h2>
-          <div className="relative mb-8">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="SEARCH BY NAME..."
-              className="w-full pl-12 pr-4 py-4 text-[10px] uppercase tracking-widest border border-gray-100 outline-none focus:border-black transition-colors"
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4 overflow-y-auto pr-4 flex-1">
-            {filteredGarments.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedGarment(item)}
-                className={`relative aspect-[3/4] bg-gray-50 cursor-pointer border p-4 transition-all ${selectedGarment?.id === item.id ? "border-black" : "border-transparent"}`}
-              >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-contain"
-                />
-                {selectedGarment?.id === item.id && (
-                  <div className="absolute top-2 right-2 bg-black text-white p-1 rounded-full">
-                    <Check size={10} />
+
+          {selectedGarment ? (
+            <div className="mb-12 p-8 border border-gray-100 bg-white shadow-sm animate-in fade-in slide-in-from-right-4">
+              <div className="flex gap-8 mb-8">
+                <div className="w-1/3 aspect-[3/4] bg-gray-50 overflow-hidden flex items-center justify-center">
+                  <img
+                    src={
+                      selectedVariant
+                        ? selectedVariant.variant_image
+                        : selectedGarment.image
+                    }
+                    alt="Preview"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm tracking-widest uppercase mb-2">
+                    {selectedGarment.name}
+                  </h3>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-4">
+                    {selectedGarment.fabric_type}
+                  </p>
+
+                  {/* Color Palette (Dynamic from Variants) */}
+                  <div className="mb-6">
+                    <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
+                      Select Color
+                    </p>
+                    <div className="flex gap-3">
+                      {selectedGarment.variants?.map((variant) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => setSelectedVariant(variant)}
+                          className={`w-6 h-6 rounded-full border-2 transition-all ${selectedVariant?.id === variant.id ? "border-black scale-110" : "border-transparent"}`}
+                          style={{ backgroundColor: variant.color_hex }}
+                          title={variant.color_name}
+                        />
+                      ))}
+                    </div>
                   </div>
-                )}
+
+                  {/* Size Selection */}
+                  <div>
+                    <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
+                      Select Size
+                    </p>
+                    <div className="flex gap-2">
+                      {selectedGarment.available_sizes
+                        ?.split(",")
+                        .map((size) => (
+                          <button
+                            key={size}
+                            onClick={() => setSelectedSize(size.trim())}
+                            className={`w-10 h-10 text-[10px] border transition-all ${selectedSize === size.trim() ? "bg-black text-white border-black" : "border-gray-200 text-gray-400"}`}
+                          >
+                            {size.trim()}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+              <button
+                onClick={() => {
+                  setSelectedGarment(null);
+                  setSelectedVariant(null);
+                }}
+                className="text-[9px] uppercase tracking-widest text-gray-400 hover:text-black"
+              >
+                Change Garment
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="relative mb-8">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  placeholder="SEARCH BY NAME..."
+                  className="w-full pl-12 pr-4 py-4 text-[10px] uppercase tracking-widest border border-gray-100 outline-none focus:border-black"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 flex-1">
+                {filteredGarments.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedGarment(item);
+                      if (item.variants && item.variants.length > 0) {
+                        setSelectedVariant(item.variants[0]);
+                      }
+                    }}
+                    className={`relative aspect-[3/4] bg-gray-50 cursor-pointer border p-4 transition-all ${selectedGarment?.id === item.id ? "border-black" : "border-transparent"}`}
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-contain"
+                    />
+                    {selectedGarment?.id === item.id && (
+                      <div className="absolute top-2 right-2 bg-black text-white p-1 rounded-full">
+                        <Check size={10} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           <button
             onClick={handleGenerate}
             disabled={loading || !userImage || !selectedGarment}
@@ -268,19 +352,19 @@ const FittingRoom = () => {
         </div>
       </div>
 
-      {/* RESULT MODAL: Handles Base64 and URLs */}
+      {/* Result Modal */}
       {result && (
         <div className="fixed inset-0 z-[100] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-12">
           <div className="flex gap-8 absolute top-12 right-12">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400 transition-colors"
+              className="flex items-center gap-2 uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400"
             >
               <Download size={14} /> Download Result
             </button>
             <button
               onClick={() => setResult(null)}
-              className="uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400 transition-colors"
+              className="uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400"
             >
               Close Result
             </button>
