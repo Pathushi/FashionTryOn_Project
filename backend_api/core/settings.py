@@ -35,6 +35,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'cloudinary_storage',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'cloudinary',
     'tryon',
     'catalog',
 ]
@@ -135,7 +137,31 @@ REST_FRAMEWORK = {
 }
 
 import os
-# 2. Update Media URL to use your specific ngrok link
-# This makes your garment images accessible to the AI cloud
-MEDIA_URL = '/media/' 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 1. Base Media Config
+# MEDIA_URL = '/media/' 
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# settings.py
+
+# --- FINAL STORAGE CONFIGURATION ---
+
+# 1. Credentials (Verified)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'docd2tzbw',
+    'API_KEY': '469811977454357',
+    'API_SECRET': 'RloPw2eBD5QEsoTEORHSMinwOJM'
+}
+
+# 2. The Modern Django 5.0+ way to set storage
+# This replaces the old DEFAULT_FILE_STORAGE line to prevent overrides
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# 3. Fallback for older versions (Keep both to be safe)
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

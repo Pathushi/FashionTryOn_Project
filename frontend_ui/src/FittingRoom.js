@@ -7,10 +7,11 @@ import {
   Upload,
   Search,
   Check,
+  History,
+  Download,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-// Replaced NGROK_URL with your local Django server address
 const API_BASE_URL = "http://127.0.0.1:8000";
 
 const FittingRoom = () => {
@@ -27,7 +28,12 @@ const FittingRoom = () => {
   const [result, setResult] = useState(null);
   const [useCamera, setUseCamera] = useState(false);
 
-  // Now fetching directly from your local machine
+  // Day 02: Persistence for History
+  const [history, setHistory] = useState(() => {
+    const saved = localStorage.getItem("tryon_history");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/tryon/garments/`)
       .then((res) => res.json())
@@ -48,6 +54,19 @@ const FittingRoom = () => {
     if (file) reader.readAsDataURL(file);
   };
 
+  // Day 02: Robust Download Logic
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    // Check if result is already base64 or a URL
+    link.href = result.startsWith("http")
+      ? result
+      : `data:image/jpeg;base64,${result}`;
+    link.download = `virtual-tryon-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleGenerate = async () => {
     if (!userImage || !selectedGarment)
       return alert("Please provide both a photo and a garment!");
@@ -60,8 +79,6 @@ const FittingRoom = () => {
 
       const formData = new FormData();
       formData.append("image", blob, "user_selfie.jpg");
-
-      // This will now send a local URL (e.g., http://127.0.0.1:8000/media/...)
       formData.append("garment_url", selectedGarment.image);
 
       const response = await fetch(`${API_BASE_URL}/api/tryon/generate/`, {
@@ -70,11 +87,23 @@ const FittingRoom = () => {
       });
 
       const data = await response.json();
-      if (data.url) {
-        setResult(data.url);
+
+      // Support the Base64 response found in your console
+      const finalResult = data.url || data.image || data.output;
+
+      if (finalResult) {
+        setResult(finalResult);
+
+        // Day 02: Update and Save History
+        const newEntry = {
+          url: finalResult,
+          date: new Date().toLocaleTimeString(),
+        };
+        const updatedHistory = [newEntry, ...history].slice(0, 5);
+        setHistory(updatedHistory);
+        localStorage.setItem("tryon_history", JSON.stringify(updatedHistory));
       } else {
-        console.error("AI Full Response:", data);
-        alert("AI Error: " + (data.error || "Could not find image URL."));
+        alert("AI Error: " + (data.error || "Could not find image data."));
       }
     } catch (err) {
       alert("Connection failed. Ensure Django is running on port 8000.");
@@ -103,58 +132,90 @@ const FittingRoom = () => {
       </nav>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/2 p-12 border-r border-gray-50 flex flex-col items-center justify-center bg-[#fafafa]">
-          <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
-            Step 1: Your Photo
-          </h2>
-          <div className="relative w-full aspect-[3/4] max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden group">
-            {!userImage ? (
-              useCamera ? (
-                <div className="h-full">
-                  <Webcam
-                    ref={webcamRef}
-                    screenshotFormat="image/jpeg"
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={handleCapture}
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black text-white p-4 rounded-full shadow-xl"
-                  >
-                    <Camera size={20} />
-                  </button>
-                </div>
+        {/* LEFT COLUMN: User Photo & History Sidebar */}
+        <div className="w-1/2 p-12 border-r border-gray-50 flex flex-col bg-[#fafafa] overflow-y-auto">
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
+              Step 1: Your Photo
+            </h2>
+            <div className="relative w-full aspect-[3/4] max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden group mb-12">
+              {!userImage ? (
+                useCamera ? (
+                  <div className="h-full">
+                    <Webcam
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={handleCapture}
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black text-white p-4 rounded-full shadow-xl"
+                    >
+                      <Camera size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center gap-4">
+                    <button
+                      onClick={() => setUseCamera(true)}
+                      className="flex items-center gap-3 text-[10px] uppercase tracking-widest hover:text-gray-500"
+                    >
+                      <Camera size={18} strokeWidth={1} /> Open Camera
+                    </button>
+                    <label className="flex items-center gap-3 text-[10px] uppercase tracking-widest cursor-pointer hover:text-gray-500">
+                      <Upload size={18} strokeWidth={1} /> Browse File
+                      <input type="file" hidden onChange={handleFileUpload} />
+                    </label>
+                  </div>
+                )
               ) : (
-                <div className="h-full flex flex-col items-center justify-center gap-4">
-                  <button
-                    onClick={() => setUseCamera(true)}
-                    className="flex items-center gap-3 text-[10px] uppercase tracking-widest hover:text-gray-500"
-                  >
-                    <Camera size={18} strokeWidth={1} /> Open Camera
-                  </button>
-                  <label className="flex items-center gap-3 text-[10px] uppercase tracking-widest cursor-pointer hover:text-gray-500">
-                    <Upload size={18} strokeWidth={1} /> Browse File
-                    <input type="file" hidden onChange={handleFileUpload} />
-                  </label>
-                </div>
-              )
-            ) : (
-              <img
-                src={userImage}
-                alt="User"
-                className="w-full h-full object-cover"
-              />
-            )}
-            {userImage && (
-              <button
-                onClick={() => setUserImage(null)}
-                className="absolute top-4 right-4 text-[9px] uppercase tracking-tighter bg-white/80 px-2 py-1 backdrop-blur-sm"
-              >
-                Reset
-              </button>
-            )}
+                <img
+                  src={userImage}
+                  alt="User"
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {userImage && (
+                <button
+                  onClick={() => setUserImage(null)}
+                  className="absolute top-4 right-4 text-[9px] uppercase tracking-tighter bg-white/80 px-2 py-1 backdrop-blur-sm"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* DAY 02: History Section */}
+          {history.length > 0 && (
+            <div className="w-full max-w-sm mx-auto border-t border-gray-200 pt-8">
+              <h3 className="text-[9px] uppercase tracking-[0.3em] mb-4 text-gray-400 flex items-center gap-2">
+                <History size={12} /> Recent Generations
+              </h3>
+              <div className="flex gap-3 overflow-x-auto pb-4">
+                {history.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setResult(item.url)}
+                    className="flex-shrink-0 w-16 aspect-[3/4] bg-white border border-gray-100 cursor-pointer hover:border-black transition-colors overflow-hidden"
+                  >
+                    <img
+                      src={
+                        item.url.startsWith("http")
+                          ? item.url
+                          : `data:image/jpeg;base64,${item.url}`
+                      }
+                      className="w-full h-full object-cover"
+                      alt="History"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* RIGHT COLUMN: Garment Selection */}
         <div className="w-1/2 p-12 flex flex-col">
           <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
             Step 2: Select Apparel
@@ -207,17 +268,30 @@ const FittingRoom = () => {
         </div>
       </div>
 
+      {/* RESULT MODAL: Handles Base64 and URLs */}
       {result && (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center p-12">
-          <button
-            onClick={() => setResult(null)}
-            className="absolute top-12 right-12 uppercase tracking-widest text-[10px] border-b border-black"
-          >
-            Close Result
-          </button>
-          <div className="max-w-md w-full aspect-[3/4] bg-gray-50 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-12">
+          <div className="flex gap-8 absolute top-12 right-12">
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-2 uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400 transition-colors"
+            >
+              <Download size={14} /> Download Result
+            </button>
+            <button
+              onClick={() => setResult(null)}
+              className="uppercase tracking-widest text-[10px] border-b border-black hover:text-gray-400 transition-colors"
+            >
+              Close Result
+            </button>
+          </div>
+          <div className="max-w-md w-full aspect-[3/4] bg-white shadow-2xl overflow-hidden">
             <img
-              src={result}
+              src={
+                result.startsWith("http")
+                  ? result
+                  : `data:image/jpeg;base64,${result}`
+              }
               alt="AI Result"
               className="w-full h-full object-contain"
             />
