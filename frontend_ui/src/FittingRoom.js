@@ -429,15 +429,10 @@ const FittingRoom = () => {
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-4 left-4 z-10 text-[8px] uppercase tracking-[0.3em] bg-black/50 text-white px-2 py-1 backdrop-blur-sm pointer-events-none">
-              After
-            </div>
-            <div className="absolute bottom-4 right-4 z-10 text-[8px] uppercase tracking-[0.3em] bg-white/50 text-black px-2 py-1 backdrop-blur-sm pointer-events-none">
-              Before
-            </div>
           </div>
+          {/* Instruction text preserved below the image */}
           <p className="mt-8 text-[9px] uppercase tracking-[0.5em] text-gray-400 italic font-light">
-            Swipe to compare before & after
+            Swipe slider to compare before & after
           </p>
         </div>
       )}
