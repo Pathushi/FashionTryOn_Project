@@ -34,6 +34,9 @@ const FittingRoom = () => {
   const [result, setResult] = useState(null);
   const [useCamera, setUseCamera] = useState(false);
 
+  // Initialize slider at 100 so the generated image is fully visible
+  const [sliderPos, setSliderPos] = useState(100);
+
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem("tryon_history");
     return saved ? JSON.parse(saved) : [];
@@ -108,6 +111,7 @@ const FittingRoom = () => {
 
       if (finalResult) {
         setResult(finalResult);
+        setSliderPos(100); // Start slider at the corner for the new image
         const newEntry = {
           url: finalResult,
           date: new Date().toLocaleTimeString(),
@@ -127,27 +131,24 @@ const FittingRoom = () => {
 
   return (
     <div className="min-h-screen bg-white text-black font-sans flex flex-col">
-      {/* Navigation: Adjusted padding for mobile */}
-      <nav className="flex justify-between items-center px-6 md:px-12 py-6 border-b border-gray-100 uppercase tracking-[0.2em] md:tracking-[0.3em] text-[9px] md:text-[10px] bg-white sticky top-0 z-50">
+      <nav className="flex justify-between items-center px-6 md:px-12 py-6 border-b border-gray-100 uppercase tracking-[0.2em] text-[9px] md:text-[10px] bg-white sticky top-0 z-50">
         <Link
           to="/"
-          className="flex items-center gap-1 md:gap-2 hover:text-gray-400 transition-colors"
+          className="flex items-center gap-2 hover:text-gray-400 transition-colors"
         >
-          <ChevronLeft size={14} strokeWidth={1} />{" "}
-          <span className="hidden xs:inline">Gallery</span>
+          <ChevronLeft size={14} strokeWidth={1} /> <span>Gallery</span>
         </Link>
-        <h1 className="text-sm md:text-lg tracking-[0.3em] md:tracking-[0.5em] font-light text-center flex-1">
+        <h1 className="text-sm md:text-lg tracking-[0.3em] font-light text-center flex-1">
           Virtual Fitting Room
         </h1>
         <div className="w-12 md:w-24"></div>
       </nav>
 
-      {/* Main Container: Stacked on mobile, side-by-side on desktop */}
       <div className="flex flex-col md:flex-row flex-1 md:overflow-hidden">
-        {/* LEFT COLUMN: User Photo */}
+        {/* STEP 1: PHOTO SECTION */}
         <div className="w-full md:w-1/2 p-6 md:p-12 border-b md:border-b-0 md:border-r border-gray-50 flex flex-col bg-[#fafafa]">
           <div className="flex-1 flex flex-col items-center justify-center">
-            <h2 className="text-[10px] uppercase tracking-[0.4em] mb-6 md:mb-8 text-gray-400 text-center">
+            <h2 className="text-[10px] uppercase tracking-[0.4em] mb-6 md:mb-8 text-gray-400">
               Step 1: Your Photo
             </h2>
             <div className="relative w-full aspect-[3/4] max-w-[280px] md:max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden mb-8 md:mb-12">
@@ -156,7 +157,7 @@ const FittingRoom = () => {
                   <div className="h-full relative">
                     <button
                       onClick={() => setUseCamera(false)}
-                      className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full backdrop-blur-md"
+                      className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full shadow-sm"
                     >
                       <X size={16} />
                     </button>
@@ -190,7 +191,7 @@ const FittingRoom = () => {
                 <div className="h-full relative">
                   <button
                     onClick={() => setUserImage(null)}
-                    className="absolute top-4 right-4 z-10 bg-white/80 px-3 py-2 rounded-sm backdrop-blur-md text-[9px] uppercase tracking-widest flex items-center gap-2"
+                    className="absolute top-4 right-4 z-10 bg-white/80 px-3 py-2 text-[9px] uppercase tracking-widest flex items-center gap-2"
                   >
                     <RotateCcw size={12} /> Reset
                   </button>
@@ -204,7 +205,6 @@ const FittingRoom = () => {
             </div>
           </div>
 
-          {/* History: Responsive scrolling */}
           {history.length > 0 && (
             <div className="w-full max-w-sm mx-auto border-t border-gray-200 pt-6">
               <h3 className="text-[9px] uppercase tracking-[0.3em] mb-4 text-gray-400 flex items-center gap-2">
@@ -214,8 +214,11 @@ const FittingRoom = () => {
                 {history.map((item, idx) => (
                   <div
                     key={idx}
-                    onClick={() => setResult(item.url)}
-                    className="flex-shrink-0 w-14 md:w-16 aspect-[3/4] bg-white border border-gray-100 cursor-pointer overflow-hidden"
+                    onClick={() => {
+                      setResult(item.url);
+                      setSliderPos(100);
+                    }}
+                    className="flex-shrink-0 w-14 md:w-16 aspect-[3/4] bg-white border border-gray-100 cursor-pointer overflow-hidden transition-all hover:border-black"
                   >
                     <img
                       src={
@@ -233,14 +236,13 @@ const FittingRoom = () => {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Garment Selection */}
+        {/* STEP 2: CUSTOMIZATION SECTION */}
         <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col md:overflow-y-auto">
           <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400 text-center md:text-left">
             Step 2: Customization
           </h2>
-
           {selectedGarment ? (
-            <div className="mb-8 md:mb-12 p-6 md:p-8 border border-gray-100 bg-white shadow-sm animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-right-4">
+            <div className="mb-8 p-6 md:p-8 border border-gray-100 bg-white shadow-sm">
               <div className="flex flex-col sm:flex-row gap-6 md:gap-8 mb-8">
                 <div className="w-full sm:w-1/3 aspect-[3/4] bg-gray-50 overflow-hidden flex items-center justify-center">
                   <img
@@ -257,10 +259,9 @@ const FittingRoom = () => {
                   <h3 className="text-xs md:text-sm tracking-widest uppercase mb-2">
                     {selectedGarment.name}
                   </h3>
-                  <p className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-widest mb-6">
+                  <p className="text-[9px] text-gray-400 uppercase tracking-widest mb-6">
                     {selectedGarment.fabric_type}
                   </p>
-
                   <div className="mb-6">
                     <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
                       Color
@@ -276,7 +277,6 @@ const FittingRoom = () => {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
                       Size
@@ -288,7 +288,7 @@ const FittingRoom = () => {
                           <button
                             key={size}
                             onClick={() => setSelectedSize(size.trim())}
-                            className={`w-9 h-9 md:w-10 md:h-10 text-[10px] border transition-all ${selectedSize === size.trim() ? "bg-black text-white border-black" : "border-gray-200 text-gray-400"}`}
+                            className={`w-9 h-9 text-[10px] border transition-all ${selectedSize === size.trim() ? "bg-black text-white border-black" : "border-gray-200 text-gray-400"}`}
                           >
                             {size.trim()}
                           </button>
@@ -302,7 +302,7 @@ const FittingRoom = () => {
                   setSelectedGarment(null);
                   setSelectedVariant(null);
                 }}
-                className="text-[9px] uppercase tracking-widest text-gray-400 hover:text-black border-b border-transparent hover:border-black transition-all pb-1"
+                className="text-[9px] uppercase tracking-widest text-gray-400 border-b border-transparent hover:border-black transition-all pb-1"
               >
                 Change Garment
               </button>
@@ -317,22 +317,20 @@ const FittingRoom = () => {
                 <input
                   type="text"
                   placeholder="SEARCH..."
-                  className="w-full pl-12 pr-4 py-4 text-[10px] uppercase tracking-widest border border-gray-100 outline-none focus:border-black"
+                  className="w-full pl-12 pr-4 py-4 text-[10px] uppercase border border-gray-100 outline-none focus:border-black"
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              {/* Responsive Grid: 2 cols on mobile, 3 on desktop */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 pb-12">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 pb-20 md:pb-0">
                 {filteredGarments.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => {
                       setSelectedGarment(item);
-                      if (item.variants && item.variants.length > 0) {
+                      if (item.variants && item.variants.length > 0)
                         setSelectedVariant(item.variants[0]);
-                      }
                     }}
-                    className={`relative aspect-[3/4] bg-gray-50 cursor-pointer border p-3 md:p-4 transition-all ${selectedGarment?.id === item.id ? "border-black" : "border-transparent"}`}
+                    className={`relative aspect-[3/4] bg-gray-50 cursor-pointer border p-3 transition-all ${selectedGarment?.id === item.id ? "border-black" : "border-transparent"}`}
                   >
                     <img
                       src={item.image}
@@ -349,13 +347,11 @@ const FittingRoom = () => {
               </div>
             </div>
           )}
-
-          {/* Sticky Generate Button for Mobile */}
-          <div className="sticky bottom-0 left-0 w-full bg-white pt-4 pb-8 md:static md:p-0">
+          <div className="fixed bottom-0 left-0 w-full bg-white pt-4 pb-8 px-6 md:static md:p-0">
             <button
               onClick={handleGenerate}
               disabled={loading || !userImage || !selectedGarment}
-              className="w-full bg-black text-white py-5 md:py-6 text-[10px] tracking-[0.4em] uppercase disabled:bg-gray-200 transition-all flex items-center justify-center gap-3 shadow-xl md:shadow-none"
+              className="w-full bg-black text-white py-5 text-[10px] tracking-[0.4em] uppercase disabled:bg-gray-200 flex items-center justify-center gap-3"
             >
               {loading ? (
                 <>
@@ -369,37 +365,79 @@ const FittingRoom = () => {
         </div>
       </div>
 
-      {/* Result Modal: Mobile friendly sizing */}
+      {/* RESULT MODAL WITH COMPARISON SLIDER */}
       {result && (
-        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 md:p-12">
-          <div className="flex flex-row md:flex-row gap-6 md:gap-8 absolute top-8 md:top-12 right-6 md:right-12">
+        <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6">
+          <div className="flex gap-8 absolute top-8 right-8">
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 uppercase tracking-widest text-[9px] md:text-[10px] border-b border-black"
+              className="flex items-center gap-2 uppercase tracking-widest text-[9px] border-b border-black"
             >
-              <Download size={14} />{" "}
-              <span className="hidden sm:inline">Download</span>
+              <Download size={14} /> Download
             </button>
             <button
               onClick={() => setResult(null)}
-              className="uppercase tracking-widest text-[9px] md:text-[10px] border-b border-black"
+              className="uppercase tracking-widest text-[9px] border-b border-black"
             >
               Close
             </button>
           </div>
-          <div className="max-w-[320px] md:max-w-md w-full aspect-[3/4] bg-white shadow-2xl overflow-hidden mt-12 md:mt-0">
+
+          <div className="max-w-[320px] md:max-w-md w-full aspect-[3/4] relative bg-white shadow-2xl overflow-hidden mt-8">
+            {/* Before Layer */}
             <img
-              src={
-                result.startsWith("http")
-                  ? result
-                  : `data:image/jpeg;base64,${result}`
-              }
-              alt="AI Result"
-              className="w-full h-full object-contain"
+              src={userImage}
+              alt="Before"
+              className="absolute inset-0 w-full h-full object-cover"
             />
+
+            {/* After Layer with Clip-Path */}
+            <div
+              className="absolute inset-0 w-full h-full overflow-hidden"
+              style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+            >
+              <img
+                src={
+                  result.startsWith("http")
+                    ? result
+                    : `data:image/jpeg;base64,${result}`
+                }
+                alt="After"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Invisible Range Slider */}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={sliderPos}
+              onChange={(e) => setSliderPos(e.target.value)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+            />
+
+            {/* Divider Line & Handle */}
+            <div
+              className="absolute top-0 bottom-0 w-[1px] bg-white pointer-events-none z-10"
+              style={{ left: `${sliderPos}%` }}
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-200">
+                <div className="flex gap-1">
+                  <div className="w-0.5 h-3 bg-gray-400"></div>
+                  <div className="w-0.5 h-3 bg-gray-400"></div>
+                </div>
+              </div>
+            </div>
+            <div className="absolute bottom-4 left-4 z-10 text-[8px] uppercase tracking-[0.3em] bg-black/50 text-white px-2 py-1 backdrop-blur-sm pointer-events-none">
+              After
+            </div>
+            <div className="absolute bottom-4 right-4 z-10 text-[8px] uppercase tracking-[0.3em] bg-white/50 text-black px-2 py-1 backdrop-blur-sm pointer-events-none">
+              Before
+            </div>
           </div>
-          <p className="mt-8 text-[9px] md:text-[10px] uppercase tracking-[0.5em] text-gray-400 italic font-light text-center">
-            AI Enhanced Virtual Fitting
+          <p className="mt-8 text-[9px] uppercase tracking-[0.5em] text-gray-400 italic font-light">
+            Swipe to compare before & after
           </p>
         </div>
       )}
