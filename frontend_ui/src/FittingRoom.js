@@ -9,6 +9,8 @@ import {
   Check,
   History,
   Download,
+  RotateCcw, // Added for Reset icon
+  X, // Added for Close icon
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -23,7 +25,6 @@ const FittingRoom = () => {
     location.state?.garment || null,
   );
 
-  // Day 03: Variant States (Now using objects from DB)
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSize, setSelectedSize] = useState("M");
 
@@ -38,13 +39,11 @@ const FittingRoom = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Fetching data and setting initial variant
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/tryon/garments/`)
       .then((res) => res.json())
       .then((data) => {
         setGarments(data);
-        // If coming from Gallery, auto-select first variant
         if (location.state?.garment) {
           const garment = location.state.garment;
           if (garment.variants && garment.variants.length > 0) {
@@ -94,7 +93,6 @@ const FittingRoom = () => {
       const formData = new FormData();
       formData.append("image", blob, "user_selfie.jpg");
 
-      // Day 03 Logic: Use the variant image URL for the AI try-on
       const finalGarmentUrl = selectedVariant
         ? selectedVariant.variant_image
         : selectedGarment.image;
@@ -143,7 +141,6 @@ const FittingRoom = () => {
       </nav>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT COLUMN: User Photo */}
         <div className="w-1/2 p-12 border-r border-gray-50 flex flex-col bg-[#fafafa] overflow-y-auto">
           <div className="flex-1 flex flex-col items-center justify-center">
             <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
@@ -152,7 +149,15 @@ const FittingRoom = () => {
             <div className="relative w-full aspect-[3/4] max-w-sm bg-white border border-gray-100 shadow-sm overflow-hidden mb-12">
               {!userImage ? (
                 useCamera ? (
-                  <div className="h-full">
+                  <div className="h-full relative">
+                    {/* Back Button for Camera View */}
+                    <button
+                      onClick={() => setUseCamera(false)}
+                      className="absolute top-4 left-4 z-10 bg-white/80 p-2 rounded-full backdrop-blur-md hover:bg-white transition-all shadow-sm"
+                    >
+                      <X size={16} />
+                    </button>
+
                     <Webcam
                       ref={webcamRef}
                       screenshotFormat="image/jpeg"
@@ -180,15 +185,24 @@ const FittingRoom = () => {
                   </div>
                 )
               ) : (
-                <img
-                  src={userImage}
-                  alt="User"
-                  className="w-full h-full object-cover"
-                />
+                <div className="h-full relative">
+                  {/* Reset Button for Uploaded/Captured Image */}
+                  <button
+                    onClick={() => setUserImage(null)}
+                    className="absolute top-4 right-4 z-10 bg-white/80 px-3 py-2 rounded-sm backdrop-blur-md hover:bg-white transition-all shadow-sm flex items-center gap-2 text-[10px] uppercase tracking-widest"
+                  >
+                    <RotateCcw size={14} /> Reset
+                  </button>
+
+                  <img
+                    src={userImage}
+                    alt="User"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               )}
             </div>
           </div>
-          {/* History */}
           {history.length > 0 && (
             <div className="w-full max-w-sm mx-auto border-t border-gray-200 pt-8">
               <h3 className="text-[9px] uppercase tracking-[0.3em] mb-4 text-gray-400 flex items-center gap-2">
@@ -217,7 +231,6 @@ const FittingRoom = () => {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Garment Selection & Manual Variants */}
         <div className="w-1/2 p-12 flex flex-col overflow-y-auto">
           <h2 className="text-[10px] uppercase tracking-[0.4em] mb-8 text-gray-400">
             Step 2: Selection & Customization
@@ -245,7 +258,6 @@ const FittingRoom = () => {
                     {selectedGarment.fabric_type}
                   </p>
 
-                  {/* Color Palette (Dynamic from Variants) */}
                   <div className="mb-6">
                     <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
                       Select Color
@@ -263,7 +275,6 @@ const FittingRoom = () => {
                     </div>
                   </div>
 
-                  {/* Size Selection */}
                   <div>
                     <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-400">
                       Select Size
@@ -352,7 +363,6 @@ const FittingRoom = () => {
         </div>
       </div>
 
-      {/* Result Modal */}
       {result && (
         <div className="fixed inset-0 z-[100] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-12">
           <div className="flex gap-8 absolute top-12 right-12">
