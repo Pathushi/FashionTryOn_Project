@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from catalog.models import Garment, GarmentVariant
 
-# 1. Create a serializer for the color variants
+# 1. for the color variants 
 class GarmentVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = GarmentVariant
         fields = ['id', 'color_name', 'color_hex', 'variant_image']
 
+# 2. Main Serializer for both Ready-Made and Bespoke Results
 class GarmentSerializer(serializers.ModelSerializer):
-    # This pulls in all variants linked to this garment
     variants = GarmentVariantSerializer(many=True, read_only=True)
     image = serializers.SerializerMethodField()
 
@@ -20,12 +20,15 @@ class GarmentSerializer(serializers.ModelSerializer):
             'category', 
             'image', 
             'price', 
-            'fabric_type', 
+            'fabric_type_label', 
             'available_sizes', 
-            'variants'  # Use 'variants' instead of 'available_colors'
+            'variants'
         ]
 
     def get_image(self, obj):
         if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
             return obj.image.url
         return None

@@ -5,9 +5,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/tryon/', include('tryon.urls')), # This links your independent layer
+    path('api/tryon/', include('tryon.urls')), # Links independent layer
 ] 
 
-# Corrected the keyword argument here
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

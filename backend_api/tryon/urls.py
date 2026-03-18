@@ -1,11 +1,9 @@
 from django.urls import path
-# This line is the fix: it imports the views you created
-from .views import VirtualTryOnAPI, GarmentListView 
+from .views import VirtualTryOnAPI, GarmentListView, BespokeOptionsView, BespokeFindMatchView
 
 urlpatterns = [
-    # Path for AI generation
     path('generate/', VirtualTryOnAPI.as_view(), name='tryon-generate'),
-    
-    # Path for your garment catalog
     path('garments/', GarmentListView.as_view(), name='garment-list'),
+    path('bespoke-options/', BespokeOptionsView.as_view(), name='bespoke-options'),
+    path('find-match/', BespokeFindMatchView.as_view(), name='bespoke-find-match'), # New!
 ]

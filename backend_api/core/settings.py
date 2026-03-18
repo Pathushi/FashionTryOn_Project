@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -138,12 +142,7 @@ REST_FRAMEWORK = {
 
 import os
 
-# 1. Base Media Config
-# MEDIA_URL = '/media/' 
-# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# settings.py
 
-# --- FINAL STORAGE CONFIGURATION ---
 
 # 1. Credentials (Verified)
 CLOUDINARY_STORAGE = {
@@ -152,8 +151,7 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': 'RloPw2eBD5QEsoTEORHSMinwOJM'
 }
 
-# 2. The Modern Django 5.0+ way to set storage
-# This replaces the old DEFAULT_FILE_STORAGE line to prevent overrides
+
 STORAGES = {
     "default": {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
@@ -163,5 +161,5 @@ STORAGES = {
     },
 }
 
-# 3. Fallback for older versions (Keep both to be safe)
+
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
