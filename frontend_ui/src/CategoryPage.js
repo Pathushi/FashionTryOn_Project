@@ -5,14 +5,14 @@ import { Camera, ChevronLeft, ShoppingBag, Loader2 } from "lucide-react";
 const CategoryPage = ({ garments }) => {
   const { categoryName } = useParams();
 
-  // 1. Updated Filter: Match uppercase database keys (MEN, WOMEN) with URL params
+  // 1.Match uppercase database keys (MEN, WOMEN) with URL params
   const filteredGarments = garments.filter(
     (item) =>
       item.category &&
       item.category.trim().toUpperCase() === categoryName.trim().toUpperCase(),
   );
 
-  // 2. Loading State: Wait for the Django fetch to complete
+  // 2. Wait for the Django fetch to complete
   if (garments.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">

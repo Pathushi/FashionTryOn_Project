@@ -8,9 +8,11 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Scissors, // Added for Bespoke icon
 } from "lucide-react";
 import FittingRoom from "./FittingRoom";
-import CategoryPage from "./CategoryPage"; // Import the new component
+import CategoryPage from "./CategoryPage";
+import BespokePage from "./BespokePage";
 
 const LandingPage = ({ garments, setIsMenuOpen }) => (
   <>
@@ -101,6 +103,7 @@ const App = () => {
   return (
     <Router>
       <div className="min-h-screen bg-white text-black font-sans relative overflow-x-hidden">
+        {/* SIDEBAR MENU */}
         <div
           className={`fixed inset-y-0 left-0 w-80 bg-white z-[100] transform ${isMenuOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-500 ease-in-out border-r border-gray-100 shadow-2xl`}
         >
@@ -111,11 +114,34 @@ const App = () => {
             >
               <X size={24} strokeWidth={1} />
             </button>
+
+            <h2 className="text-[10px] tracking-[0.4em] uppercase text-gray-400 mb-8 font-light">
+              Experience
+            </h2>
+            <ul className="space-y-6 text-sm uppercase tracking-[0.2em] font-medium mb-12">
+              {/* NEW BESPOKE LINK */}
+              <li onClick={() => setIsMenuOpen(false)}>
+                <Link
+                  to="/bespoke"
+                  className="hover:pl-4 transition-all duration-300 cursor-pointer block text-blue-600 flex items-center gap-2"
+                >
+                  <Scissors size={14} /> Bespoke Tailoring
+                </Link>
+              </li>
+              <li onClick={() => setIsMenuOpen(false)}>
+                <Link
+                  to="/try-on"
+                  className="hover:pl-4 transition-all duration-300 cursor-pointer block"
+                >
+                  Virtual Fitting Room
+                </Link>
+              </li>
+            </ul>
+
             <h2 className="text-[10px] tracking-[0.4em] uppercase text-gray-400 mb-8 font-light">
               Categories
             </h2>
             <ul className="space-y-6 text-sm uppercase tracking-[0.2em] font-light">
-              {/* Linked categories to trigger filtered views */}
               <li onClick={() => setIsMenuOpen(false)}>
                 <Link
                   to="/collection/men"
@@ -147,6 +173,7 @@ const App = () => {
           </div>
         </div>
 
+        {/* TOP NAVIGATION */}
         <nav className="flex justify-between items-center px-12 py-8 border-b border-gray-100 uppercase tracking-[0.3em] text-[10px] bg-white sticky top-0 z-40">
           <div
             className="flex items-center gap-2 cursor-pointer group"
@@ -164,6 +191,13 @@ const App = () => {
             LUXURY FIT
           </Link>
           <div className="flex gap-8 items-center">
+            {/* LINK TO BESPOKE FROM TOP NAV */}
+            <Link
+              to="/bespoke"
+              className="tracking-[0.3em] hover:text-gray-400 transition-colors font-light text-blue-600"
+            >
+              BESPOKE
+            </Link>
             <Link
               to="/try-on"
               className="tracking-[0.3em] hover:text-gray-400 transition-colors font-light"
@@ -189,7 +223,7 @@ const App = () => {
             }
           />
           <Route path="/try-on" element={<FittingRoom />} />
-          {/* Dynamic route to handle different category collections */}
+          <Route path="/bespoke" element={<BespokePage />} /> {/* NEW ROUTE */}
           <Route
             path="/collection/:categoryName"
             element={<CategoryPage garments={garments} />}

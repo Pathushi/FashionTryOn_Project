@@ -34,7 +34,7 @@ const FittingRoom = () => {
   const [result, setResult] = useState(null);
   const [useCamera, setUseCamera] = useState(false);
 
-  // Initialize slider at 100 so the generated image is fully visible
+  // Slider to generated image is fully visible
   const [sliderPos, setSliderPos] = useState(100);
 
   const [history, setHistory] = useState(() => {
