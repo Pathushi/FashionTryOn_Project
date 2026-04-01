@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, Check, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
@@ -19,7 +19,6 @@ const BespokePage = () => {
     button: null,
   });
 
-  // 1. Fetch all from Django
   useEffect(() => {
     fetch(
       `${API_BASE_URL}/api/tryon/bespoke-options/?category=${build.category}`,
@@ -28,7 +27,6 @@ const BespokePage = () => {
       .then((data) => setAttributes(data));
   }, [build.category]);
 
-  // 2. Logic for Fabric Palette
   const fabricPalette = attributes.filter((attr) => attr.type === "FABRIC");
   const availableColors = [
     ...new Set(fabricPalette.map((f) => f.color).filter(Boolean)),
@@ -37,9 +35,7 @@ const BespokePage = () => {
     ? fabricPalette.filter((f) => f.color === selectedColor)
     : fabricPalette;
 
-  // 3. Match Finder logic
   const handleFindMatch = async () => {
-    // Basic validation to ensure picked everything
     if (!build.fabric || !build.collar || !build.cuff || !build.button) {
       return alert(
         "Please select all features: Fabric, Collar, Cuff, and Button style.",
@@ -62,7 +58,8 @@ const BespokePage = () => {
 
       const match = await response.json();
       if (response.ok) {
-        navigate("/try-on", { state: { garment: match } });
+        // NAVIGATE TO BESPOKE FITTING ROOM
+        navigate("/bespoke-try-on", { state: { garment: match } });
       } else {
         alert(
           match.error ||
@@ -78,7 +75,6 @@ const BespokePage = () => {
 
   return (
     <div className="min-h-screen bg-white text-black p-8 md:p-20 font-sans">
-      {/* Navigation */}
       <nav className="mb-20">
         <button
           onClick={() => (step > 1 ? setStep(step - 1) : navigate(-1))}
@@ -89,7 +85,6 @@ const BespokePage = () => {
       </nav>
 
       <div className="max-w-6xl mx-auto">
-        {/* STEP 1: CATEGORY SELECTION */}
         {step === 1 && (
           <div className="animate-in fade-in duration-700">
             <h2 className="text-[11px] uppercase tracking-[0.5em] mb-16 text-center text-gray-400 italic">
@@ -103,7 +98,7 @@ const BespokePage = () => {
                     setBuild({ ...build, category: cat });
                     setStep(2);
                   }}
-                  className="border border-gray-100 py-12 text-[10px] tracking-[0.4em] uppercase hover:border-black transition-all"
+                  className="border border-gray-300 py-12 text-[10px] tracking-[0.4em] uppercase hover:border-black transition-all"
                 >
                   {cat}
                 </button>
@@ -112,14 +107,11 @@ const BespokePage = () => {
           </div>
         )}
 
-        {/* STEP 2: FABRIC SELECTION */}
         {step === 2 && (
           <div className="animate-in fade-in duration-700">
             <h2 className="text-[11px] uppercase tracking-[0.5em] mb-12 text-center text-gray-400">
               01. Choose Fabric
             </h2>
-
-            {/* Color Sorter */}
             <div className="flex justify-center gap-4 mb-16">
               <button
                 onClick={() => setSelectedColor(null)}
@@ -136,7 +128,6 @@ const BespokePage = () => {
                 />
               ))}
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
               {filteredFabrics.map((f) => (
                 <div
@@ -155,7 +146,6 @@ const BespokePage = () => {
                 </div>
               ))}
             </div>
-
             <div className="mt-20 flex justify-center">
               <button
                 disabled={!build.fabric}
@@ -168,121 +158,57 @@ const BespokePage = () => {
           </div>
         )}
 
-        {/* STEP 3: VISUAL FEATURE SELECTION */}
         {step === 3 && (
           <div className="animate-in fade-in duration-700">
             <h2 className="text-[11px] uppercase tracking-[0.5em] mb-12 text-center text-gray-400">
               02. Refine Your Features
             </h2>
-
             <div className="max-w-4xl mx-auto space-y-20">
-              {/* COLLAR SELECTOR */}
-              <div className="space-y-6">
-                <h3 className="text-[9px] uppercase tracking-[0.3em] text-gray-400 border-b pb-2 italic">
-                  Select Collar Style
-                </h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                  {attributes
-                    .filter((a) => a.type === "COLLAR")
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        onClick={() => setBuild({ ...build, collar: a.id })}
-                        className={`cursor-pointer p-2 border transition-all ${build.collar === a.id ? "border-black bg-gray-50 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
-                      >
-                        <img
-                          src={a.image}
-                          className="w-full aspect-square object-contain"
-                          alt={a.name}
-                        />
-                        <p className="text-[8px] uppercase mt-2 text-center tracking-tighter">
-                          {a.name}
-                        </p>
-                      </div>
-                    ))}
+              {["COLLAR", "CUFF", "BUTTON"].map((type) => (
+                <div key={type} className="space-y-6">
+                  <h3 className="text-[9px] uppercase tracking-[0.3em] text-gray-400 border-b pb-2 italic">
+                    Select {type} Style
+                  </h3>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                    {attributes
+                      .filter((a) => a.type === type)
+                      .map((a) => (
+                        <div
+                          key={a.id}
+                          onClick={() =>
+                            setBuild({ ...build, [type.toLowerCase()]: a.id })
+                          }
+                          className={`cursor-pointer p-2 border transition-all ${build[type.toLowerCase()] === a.id ? "border-black bg-gray-50 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
+                        >
+                          <img
+                            src={a.image}
+                            className="w-full aspect-square object-contain"
+                            alt={a.name}
+                          />
+                          <p className="text-[8px] uppercase mt-2 text-center tracking-tighter">
+                            {a.name}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </div>
-
-              {/* CUFF SELECTOR */}
-              <div className="space-y-6">
-                <h3 className="text-[9px] uppercase tracking-[0.3em] text-gray-400 border-b pb-2 italic">
-                  Select Cuff Style
-                </h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                  {attributes
-                    .filter((a) => a.type === "CUFF")
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        onClick={() => setBuild({ ...build, cuff: a.id })}
-                        className={`cursor-pointer p-2 border transition-all ${build.cuff === a.id ? "border-black bg-gray-50 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
-                      >
-                        <img
-                          src={a.image}
-                          className="w-full aspect-square object-contain"
-                          alt={a.name}
-                        />
-                        <p className="text-[8px] uppercase mt-2 text-center tracking-tighter">
-                          {a.name}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* BUTTON SELECTOR */}
-              <div className="space-y-6">
-                <h3 className="text-[9px] uppercase tracking-[0.3em] text-gray-400 border-b pb-2 italic">
-                  Select Button Type
-                </h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                  {attributes
-                    .filter((a) => a.type === "BUTTON")
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        onClick={() => setBuild({ ...build, button: a.id })}
-                        className={`cursor-pointer p-2 border transition-all ${build.button === a.id ? "border-black bg-gray-50 shadow-sm" : "border-gray-100 hover:border-gray-300"}`}
-                      >
-                        <img
-                          src={a.image}
-                          className="w-full aspect-square object-contain"
-                          alt={a.name}
-                        />
-                        <p className="text-[8px] uppercase mt-2 text-center tracking-tighter">
-                          {a.name}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* MEASUREMENTS & FINAL ACTION */}
+              ))}
               <div className="pt-10 border-t border-gray-100">
                 <div className="grid md:grid-cols-2 gap-12 items-end">
                   <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-[9px] uppercase text-gray-400 mb-2 block font-mono">
-                        Neck (cm)
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full border-b py-2 text-xs outline-none focus:border-black"
-                        placeholder="0.0"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] uppercase text-gray-400 mb-2 block font-mono">
-                        Chest (cm)
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full border-b py-2 text-xs outline-none focus:border-black"
-                        placeholder="0.0"
-                      />
-                    </div>
+                    {["Neck", "Chest"].map((label) => (
+                      <div key={label}>
+                        <label className="text-[9px] uppercase text-gray-400 mb-2 block font-mono">
+                          {label} (cm)
+                        </label>
+                        <input
+                          type="number"
+                          className="w-full border-b py-2 text-xs outline-none focus:border-black"
+                          placeholder="0.0"
+                        />
+                      </div>
+                    ))}
                   </div>
-
                   <button
                     onClick={handleFindMatch}
                     disabled={matchingLoading}

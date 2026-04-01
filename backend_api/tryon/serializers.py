@@ -20,6 +20,7 @@ class GarmentSerializer(serializers.ModelSerializer):
             'category', 
             'image', 
             'price', 
+            'gender',
             'fabric_type_label', 
             'available_sizes', 
             'variants'

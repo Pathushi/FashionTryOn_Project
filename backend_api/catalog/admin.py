@@ -54,7 +54,7 @@ class BespokeAdmin(admin.ModelAdmin):
     
     # Organize fields to make matching easier
     fields = (
-        'name', 'category', 'image', 'price', 
+        'name', 'category', 'gender', 'image', 'price', 
         'fabric_type_label', 'available_sizes',
         'fabric_attr', 'collar_attr', 'cuff_attr', 'button_attr'
     )

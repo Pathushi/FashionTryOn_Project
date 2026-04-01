@@ -50,6 +50,9 @@ class BespokeFindMatchView(APIView):
         button_id = request.data.get('button_id')
         category = request.data.get('category', 'SHIRT')
 
+        # Added debug line as requested
+        print(f"DEBUG: Matching - Fabric:{fabric_id}, Collar:{collar_id}, Cuff:{cuff_id}, Button:{button_id}")
+
         try:
             match = Garment.objects.get(
                 finishing_method='BESPOKE',
