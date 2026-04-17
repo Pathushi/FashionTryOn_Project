@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Camera, ChevronLeft, ShoppingBag, Loader2 } from "lucide-react";
+import { Camera, ChevronLeft, Loader2 } from "lucide-react";
 
 const CategoryPage = ({ garments }) => {
   const { categoryName } = useParams();
 
-  // 1. New State for sub-filtering (SHIRT, TROUSER, or ALL)
+  // 1. State for sub-filtering (SHIRT, TROUSER, or ALL)
   const [activeSubCategory, setActiveSubCategory] = useState("ALL");
 
-  // 2. Updated Filter Logic: Checks Gender AND the selected Sub-Category
+  // 2. Filter Logic: Checks Gender AND the selected Sub-Category
   const filteredGarments = garments.filter((item) => {
     const matchesGender =
       item.gender &&
@@ -48,14 +48,13 @@ const CategoryPage = ({ garments }) => {
           {categoryName} Collection
         </h2>
 
-        <div className="flex gap-6">
-          <ShoppingBag size={18} strokeWidth={1} className="cursor-pointer" />
-        </div>
+        {/* Empty div to maintain flex spacing since icon was removed */}
+        <div className="w-10"></div>
       </header>
 
-      {/* SUB-CATEGORY FILTER BAR */}
+      {/* SUB-CATEGORY FILTER BAR - TSHIRT and SUIT removed */}
       <div className="flex justify-center gap-8 py-8 border-b border-gray-50">
-        {["ALL", "SHIRT", "TROUSER", "SUIT", "TSHIRT"].map((sub) => (
+        {["ALL", "SHIRT", "TROUSER"].map((sub) => (
           <button
             key={sub}
             onClick={() => setActiveSubCategory(sub)}
@@ -65,7 +64,7 @@ const CategoryPage = ({ garments }) => {
                 : "text-gray-400 hover:text-black"
             }`}
           >
-            {sub === "TSHIRT" ? "T-Shirts" : sub}
+            {sub}
           </button>
         ))}
       </div>
