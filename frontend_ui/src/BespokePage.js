@@ -149,22 +149,38 @@ const BespokePage = () => {
                 ))}
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-                {filteredFabrics.map((f) => (
-                  <div
-                    key={f.id}
-                    onClick={() => setBuild({ ...build, fabric: f })}
-                    className={`cursor-pointer p-4 border transition-all ${build.fabric?.id === f.id ? "border-black shadow-md" : "border-gray-50 hover:border-gray-300"}`}
-                  >
-                    <img
-                      src={f.image}
-                      className="w-full aspect-square object-cover mb-4"
-                      alt={f.name}
-                    />
-                    <p className="text-[9px] uppercase text-center tracking-widest">
-                      {f.name}
-                    </p>
-                  </div>
-                ))}
+                {filteredFabrics.map((f, index) => {
+                  const isLocked = index >= 2;
+                  return (
+                    <div
+                      key={f.id}
+                      onClick={() =>
+                        !isLocked && setBuild({ ...build, fabric: f })
+                      }
+                      className={`relative cursor-pointer p-4 border transition-all ${
+                        isLocked
+                          ? "opacity-40 grayscale cursor-not-allowed border-gray-100"
+                          : build.fabric?.id === f.id
+                            ? "border-black shadow-md"
+                            : "border-gray-50 hover:border-gray-300"
+                      }`}
+                    >
+                      {isLocked && (
+                        <span className="absolute top-2 right-2 text-[7px] bg-gray-100 px-1 uppercase tracking-tighter">
+                          soon
+                        </span>
+                      )}
+                      <img
+                        src={f.image}
+                        className="w-full aspect-square object-cover mb-4"
+                        alt={f.name}
+                      />
+                      <p className="text-[9px] uppercase text-center tracking-widest">
+                        {f.name}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -177,25 +193,39 @@ const BespokePage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
                   {attributes
                     .filter((a) => a.type === type)
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        onClick={() =>
-                          setBuild({ ...build, [type.toLowerCase()]: a.id })
-                        }
-                        className={`cursor-pointer p-4 border transition-all ${build[type.toLowerCase()] === a.id ? "border-black shadow-md bg-gray-50/30" : "border-gray-50 hover:border-gray-300"}`}
-                      >
-                        {/* Same aspect-square sizing as fabric cards */}
-                        <img
-                          src={a.image}
-                          className="w-full aspect-square object-contain mb-4"
-                          alt={a.name}
-                        />
-                        <p className="text-[9px] uppercase text-center tracking-widest">
-                          {a.name}
-                        </p>
-                      </div>
-                    ))}
+                    .map((a, idx) => {
+                      const isLocked = idx >= 2;
+                      return (
+                        <div
+                          key={a.id}
+                          onClick={() =>
+                            !isLocked &&
+                            setBuild({ ...build, [type.toLowerCase()]: a.id })
+                          }
+                          className={`relative cursor-pointer p-4 border transition-all ${
+                            isLocked
+                              ? "opacity-40 grayscale cursor-not-allowed border-gray-100"
+                              : build[type.toLowerCase()] === a.id
+                                ? "border-black shadow-md bg-gray-50/30"
+                                : "border-gray-50 hover:border-gray-300"
+                          }`}
+                        >
+                          {isLocked && (
+                            <span className="absolute top-2 right-2 text-[7px] bg-gray-100 px-1 uppercase tracking-tighter">
+                              soon
+                            </span>
+                          )}
+                          <img
+                            src={a.image}
+                            className="w-full aspect-square object-contain mb-4"
+                            alt={a.name}
+                          />
+                          <p className="text-[9px] uppercase text-center tracking-widest">
+                            {a.name}
+                          </p>
+                        </div>
+                      );
+                    })}
                 </div>
               </section>
             ))}
