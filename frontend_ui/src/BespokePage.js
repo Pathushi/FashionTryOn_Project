@@ -194,7 +194,7 @@ const BespokePage = () => {
                   {attributes
                     .filter((a) => a.type === type)
                     .map((a, idx) => {
-                      const isLocked = idx >= 2;
+                      const isLocked = idx >= 1;
                       return (
                         <div
                           key={a.id}
