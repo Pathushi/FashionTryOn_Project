@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-zzr!l#_3_1ll3jt@1yk9_3_yp^8wzzfu$i3*qlunnz$i&s35r@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['13.235.79.167', 'localhost', '127.0.0.1']
 
 # backend_api/core/settings.py
 
